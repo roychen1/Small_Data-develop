@@ -279,8 +279,9 @@ def transcript_fragment_to_speaker_text_tuple(transcript_fragment):
     UserSpeechFragment = collections.namedtuple('UserSpeechFragment', ['role', 'fragment_text']) 
     aa=[]    
     for l in transcript_fragment:
-        #aa=filter(None,re.split(r'[(](\w+)[)]:\s(.*)',l))    
-        aa=aa+ [UserSpeechFragment(role=filter(None,re.split(r'[(](\w+)[)]:\s(.*)',l))[0], fragment_text=filter(None,re.split(r'[(](\w+)[)]:\s(.*)',l))[1].strip())]
+        #aa=filter(None,re.split(r'[(](\w+)[)]:\s(.*)',l)) 
+        if len(filter(None,re.split(r'[(](\w+)[)]:\s(.*)',l)))>1:
+            aa=aa+ [UserSpeechFragment(role=filter(None,re.split(r'[(](\w+)[)]:\s(.*)',l))[0], fragment_text=filter(None,re.split(r'[(](\w+)[)]:\s(.*)',l))[1].strip())]
     return aa
     
 def test_transcript_fragment_to_speaker_text_tuple():
@@ -323,19 +324,15 @@ def consolidate_speaker_runs(assigned_transcripts):
     UserSpeechFragment = collections.namedtuple('UserSpeechFragment', ['role', 'fragment_text']) 
     dd=[]
     i=0
-    while i <=len(assigned_transcripts): 
-        if i==len(assigned_transcripts)-1:
-            dd=dd+[UserSpeechFragment(role=assigned_transcripts[i].role, fragment_text=assigned_transcripts[i].fragment_text)]
-            i=i+2
-        elif assigned_transcripts[i+1].role==assigned_transcripts[i].role:
-            dd=dd+[UserSpeechFragment(assigned_transcripts[i].role, str(assigned_transcripts[i].fragment_text)+' ' + str(assigned_transcripts[i+1].fragment_text))]
-            i=i+2        
-      
-        else:        
-            dd=dd+[UserSpeechFragment(role=assigned_transcripts[i].role, fragment_text=assigned_transcripts[i].fragment_text)]
-            i=i+1
+    while i <len(assigned_transcripts):
+        d=assigned_transcripts[i].fragment_text
+        while i <>len(assigned_transcripts)-1 and assigned_transcripts[i].role==assigned_transcripts[i+1].role:
+            d=d+' ' + assigned_transcripts[i+1].fragment_text
+            i=i+1    
+        dd=dd+[UserSpeechFragment(assigned_transcripts[i].role, d)]
+        i=i+1
     return dd
-        
+
 def test_consolidate_speaker_runs():
     input_collection = [UserSpeechFragment(CALLER, 'hello'),
                         UserSpeechFragment(CALLER, 'world'),
@@ -432,7 +429,7 @@ def quiz_printed_value_of_logging_dot_ERROR():
     test with:
         nosetests -v run_project:test_quiz_printed_value_of_logging_dot_ERROR
     '''
-    return
+    return 40
 
 
 def test_quiz_printed_value_of_logging_dot_ERROR():
@@ -474,7 +471,16 @@ def dialogue_collection_to_string(dialogue_collection, role_filter=None):
     Test with:
         nosetests -v run_project:test_dialogue_collection_to_string
     '''
-
+    text=''
+    if role_filter==None:
+        for i in range(len(dialogue_collection)):
+            text=text + dialogue_collection[i].fragment_text + ' '
+    else:
+        for i in range(len(dialogue_collection)):
+            if dialogue_collection[i].role==role_filter:
+                text=text + dialogue_collection[i].fragment_text + ' '
+    return text.strip()
+            
 def get_agent_transcript(dialogue_collection):
     ''' syntactic sugar on top of dialogue_collection_to_string '''
     return dialogue_collection_to_string(dialogue_collection, role_filter=AGENT)
